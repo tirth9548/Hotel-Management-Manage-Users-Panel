@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin User Manager</title>
+    <link rel="manifest" href="manage-users-manifest.json">
+
+    <title>Admin User Manager - Installable PWA</title>
     
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -159,48 +162,73 @@
     </div>
 </div>
 
-<script src="Manage Users.js"></script>
+    <script src="Manage Users.js"></script>
+    
+    <script>
+      // Admin PWA Install
+      let deferredPrompt;
+      const adminInstallBtn = document.getElementById('admin-install-btn');
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (adminInstallBtn) adminInstallBtn.style.display = 'inline-flex';
+      });
+      if (adminInstallBtn) {
+        adminInstallBtn.addEventListener('click', async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            adminInstallBtn.style.display = 'none';
+            deferredPrompt = null;
+          }
+        });
+      }
+      window.addEventListener('appinstalled', () => {
+        adminInstallBtn.style.display = 'none';
+        deferredPrompt = null;
+      });
+    </script>
 
-<script>
-    window.addEventListener("load", function() {
-        // Check if primary admin is already verified this session
-        const isVerified = sessionStorage.getItem('primaryAdminVerified') === 'true';
+    <script>
+        window.addEventListener("load", function() {
+            // Check if primary admin is already verified this session
+            const isVerified = sessionStorage.getItem('primaryAdminVerified') === 'true';
 
-        if (!sessionStorage.getItem('manageUsersAnimationPlayed')) {
-            // First time loading the tab
-            setTimeout(function() {
-                document.getElementById("preloader").classList.add("hidden");
+            if (!sessionStorage.getItem('manageUsersAnimationPlayed')) {
+                // First time loading the tab
+                setTimeout(function() {
+                    document.getElementById("preloader").classList.add("hidden");
+                    
+                    if (isVerified) {
+                        document.getElementById("managementPanel").classList.add("active");
+                        if(typeof loadUsers === 'function') loadUsers();
+                        // Auto-focus Add User field
+                        document.getElementById("newUsername").focus(); 
+                    } else {
+                        document.getElementById("securityScreen").classList.remove("hidden");
+                        // Auto-focus Login Username field
+                        document.getElementById("secUser").focus(); 
+                    }
+                    
+                    sessionStorage.setItem('manageUsersAnimationPlayed', 'true');
+                }, 2500); 
+            } else {
+                // Refreshing the page (no animation)
+                document.getElementById("preloader").style.display = "none";
                 
                 if (isVerified) {
                     document.getElementById("managementPanel").classList.add("active");
                     if(typeof loadUsers === 'function') loadUsers();
                     // Auto-focus Add User field
-                    document.getElementById("newUsername").focus(); 
+                    document.getElementById("newUsername").focus();
                 } else {
                     document.getElementById("securityScreen").classList.remove("hidden");
                     // Auto-focus Login Username field
-                    document.getElementById("secUser").focus(); 
+                    document.getElementById("secUser").focus();
                 }
-                
-                sessionStorage.setItem('manageUsersAnimationPlayed', 'true');
-            }, 2500); 
-        } else {
-            // Refreshing the page (no animation)
-            document.getElementById("preloader").style.display = "none";
-            
-            if (isVerified) {
-                document.getElementById("managementPanel").classList.add("active");
-                if(typeof loadUsers === 'function') loadUsers();
-                // Auto-focus Add User field
-                document.getElementById("newUsername").focus();
-            } else {
-                document.getElementById("securityScreen").classList.remove("hidden");
-                // Auto-focus Login Username field
-                document.getElementById("secUser").focus();
             }
-        }
-    });
-</script>
+        });
+    </script>
 
 </body>
 </html>
